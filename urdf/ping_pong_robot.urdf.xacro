@@ -1,0 +1,194 @@
+<?xml version="1.0"?>
+<robot name="ping_pong_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Materials -->
+  <material name="dark_grey"><color rgba="0.2 0.2 0.2 1.0"/></material>
+  <material name="blue"><color rgba="0.0 0.2 0.8 1.0"/></material>
+  <material name="black"><color rgba="0.05 0.05 0.05 1.0"/></material>
+  <material name="red"><color rgba="0.8 0.0 0.0 1.0"/></material>
+  <material name="net_grey"><color rgba="0.6 0.6 0.6 0.5"/></material>
+  <material name="orange"><color rgba="1.0 0.4 0.0 1.0"/></material>
+
+  <!-- Base Footprint -->
+  <link name="base_footprint"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Base Chassis -->
+  <link name="base_link">
+    <visual>
+      <geometry><box size="0.35 0.25 0.12"/></geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <geometry><box size="0.35 0.25 0.12"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="3.0"/>
+      <inertia ixx="0.019" ixy="0" ixz="0" iyy="0.034" iyz="0" izz="0.046"/>
+    </inertial>
+  </link>
+  <gazebo reference="base_link"><material>Gazebo/DarkGrey</material></gazebo>
+
+  <!-- Mecanum Wheels Macro -->
+  <xacro:macro name="mecanum_wheel" params="prefix x_reflect y_reflect">
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_wheel_link"/>
+      <origin xyz="${x_reflect * 0.12} ${y_reflect * 0.15} -0.03" rpy="-1.5708 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <link name="${prefix}_wheel_link">
+      <visual>
+        <geometry><cylinder radius="0.05" length="0.04"/></geometry>
+        <material name="blue"/>
+      </visual>
+      <collision>
+        <geometry><cylinder radius="0.05" length="0.04"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="0.2"/>
+        <inertia ixx="0.00015" ixy="0" ixz="0" iyy="0.00015" iyz="0" izz="0.00025"/>
+      </inertial>
+    </link>
+    <gazebo reference="${prefix}_wheel_link"><material>Gazebo/Blue</material></gazebo>
+  </xacro:macro>
+
+  <xacro:mecanum_wheel prefix="front_left"  x_reflect="1"  y_reflect="1" />
+  <xacro:mecanum_wheel prefix="front_right" x_reflect="1"  y_reflect="-1" />
+  <xacro:mecanum_wheel prefix="rear_left"   x_reflect="-1" y_reflect="1" />
+  <xacro:mecanum_wheel prefix="rear_right"  x_reflect="-1" y_reflect="-1" />
+
+  <!-- OLED Display Screen -->
+  <joint name="screen_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="screen_link"/>
+    <origin xyz="0.176 0 0.01" rpy="0 0 0"/>
+  </joint>
+  <link name="screen_link">
+    <visual>
+      <geometry><box size="0.01 0.10 0.06"/></geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <geometry><box size="0.01 0.10 0.06"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+  <gazebo reference="screen_link"><material>Gazebo/Black</material></gazebo>
+
+  <!-- Camera Link with Required Inertial Block -->
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.15 0 0.12" rpy="0 0 0"/>
+  </joint>
+  
+  <link name="camera_link">
+    <visual>
+      <geometry><box size="0.03 0.03 0.03"/></geometry>
+      <material name="red"/>
+    </visual>
+    <collision>
+      <geometry><box size="0.03 0.03 0.03"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <!-- Gazebo ROS 2 Camera Plugin -->
+  <gazebo reference="camera_link">
+    <material>Gazebo/Red</material>
+    <sensor type="camera" name="esp32_camera">
+      <update_rate>30.0</update_rate>
+      <camera name="head">
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+      </camera>
+      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+        <ros>
+          <remapping>image_raw:=/target_detection_image</remapping>
+        </ros>
+        <camera_name>esp32_camera</camera_name>
+        <frame_name>camera_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Separate Catching Basket -->
+  <joint name="catch_net_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="catch_net_link"/>
+    <origin xyz="-0.02 0 0.15" rpy="0 0 0"/>
+  </joint>
+  <link name="catch_net_link">
+    <visual>
+      <geometry><cylinder radius="0.13" length="0.10"/></geometry>
+      <material name="net_grey"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.13" length="0.10"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+  <gazebo reference="catch_net_link">
+    <material>Gazebo/GreyTransparent</material>
+    <kp>1000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+
+  <!-- Separate Launcher Barrel Mechanism -->
+  <joint name="launcher_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="launcher_link"/>
+    <origin xyz="-0.12 0 0.10" rpy="0 -0.5236 0"/>
+  </joint>
+  <link name="launcher_link">
+    <visual>
+      <geometry><cylinder radius="0.025" length="0.18"/></geometry>
+      <material name="orange"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.025" length="0.18"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0005" ixy="0" ixz="0" iyy="0.0005" iyz="0" izz="0.0005"/>
+    </inertial>
+  </link>
+  <gazebo reference="launcher_link"><material>Gazebo/Orange</material></gazebo>
+
+  <!-- Planar Move Plugin for Mecanum Driving -->
+  <gazebo>
+    <plugin name="mecanum_controller" filename="libgazebo_ros_planar_move.so">
+      <ros>
+        <remapping>cmd_vel:=/cmd_vel</remapping>
+        <remapping>odom:=/odom</remapping>
+      </ros>
+      <update_rate>50</update_rate>
+      <robot_base_frame>base_footprint</robot_base_frame>
+    </plugin>
+  </gazebo>
+
+</robot>

@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot name="ping_pong_ball" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <link name="ball_link">
+    <visual>
+      <geometry>
+        <sphere radius="0.02"/> <!-- 40mm Ping Pong Ball -->
+      </geometry>
+      <material name="orange">
+        <color rgba="1.0 0.5 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.0027"/> <!-- 2.7 grams -->
+      <inertia ixx="0.00000072" ixy="0" ixz="0" iyy="0.00000072" iyz="0" izz="0.00000072"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="ball_link">
+    <material>Gazebo/Orange</material>
+    <mu1>0.5</mu1>
+    <mu2>0.5</mu2>
+    <kp>1000000.0</kp>
+    <kd>1.0</kd>
+    <maxVel>10.0</maxVel>
+    <minDepth>0.001</minDepth>
+  </gazebo>
+</robot>
